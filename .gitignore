@@ -69,3 +69,6 @@ __pycache__/
 
 # Audio Files
 *.mp3
+
+# Application Specific Files
+jobs.json
