@@ -39,12 +39,13 @@ class RecurringJob(BaseModel):
     title: str
     end_date: datetime.date
 
-def get_filename():
+def get_filename(title):
     now = datetime.datetime.now()
-    return now.strftime("ktcu_recording_%Y-%m-%d_%H-%M-%S.mp3")
+    safe_title = title.replace(" ", "_").replace("/", "-")  # Sanitize the title for file naming
+    return now.strftime(f"recordings/{safe_title}_%Y-%m-%d_%H-%M.mp3")
 
-def record_stream(duration_seconds):
-    output_file = get_filename()
+def record_stream(duration_seconds, title):
+    output_file = get_filename(title)
     print(f"Recording to {output_file} for {duration_seconds} seconds...")
     try:
         subprocess.run([
@@ -62,7 +63,7 @@ def add_one_off_job(job: OneOffJob):
     scheduler.add_job(
         record_stream,
         trigger=DateTrigger(run_date=job.record_time),
-        args=[job.duration],
+        args=[job.duration, job.title],
         name=job.title,  # Use the title as the job's name
         replace_existing=True
     )
@@ -79,7 +80,7 @@ def add_recurring_job(job: RecurringJob):
             minute=job.start_time.minute,
             end_date=job.end_date
         ),
-        args=[job.duration],
+        args=[job.duration, job.title],
         name=job.title,
         replace_existing=True
     )
@@ -95,7 +96,6 @@ def list_jobs():
             "next_run_time": job.next_run_time
         })
     return jobs
-
 
 @app.delete("/jobs/{job_id}")
 def delete_job(job_id: str):
